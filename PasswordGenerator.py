@@ -1,65 +1,103 @@
+import random
+import string
 import tkinter as tk
 from tkinter import messagebox
-
-#Tee usu frame nimega frame2. Taust kollane. Paisuta esimese frame alla sarnaselt. Paiguta lbl_previous frame2-le.
-
-
-#Funktsioon hiire kordinaatide jaoks
-def mouse_motion(event=None):
-    x, y = event.x, event.y
-    lbl_mouse.config(text=f'x = {x}, y = {y}') #Kirjutab hiire kordinaadid
-
-#Tervitustekst
-def welcome(event=None):
-    name = txt_name.get().strip().title() #Eemaldab tühikud ja kirjutab suure tähega
-    #print(name) #test konsooli
-    if name:
-        messagebox.showinfo('Tervitus', f'Tere, {name}!') #Tervitusteks: esimene on kasti nimi ja teine on sõnumi sisu.
-        lbl_previous.config(text=name) #Kirjutab labelisse selle viimase sisestatud nime.
-    else:
-        messagebox.showerror('Hoiatus', f'Nime pole sisestatud!')
-        lbl_previous.config(text='VIGA')
-
-    txt_name.delete(0, 'end') #Kustutab eelneva sisestuse Sobib ka tk.END
-
-window = tk.Tk() #Esimene on tk lühend ja teine on funktsioon
-window.title('Lihtne kasutajaliides') #Põhiakna loomine (Tiitelriba teksti määramine)
-window.geometry('450x250') #Pikslites akna suurus laiusxkõrgus
-window.resizable(False, False) #Akna suurust muuta ei saa (Vaikimisi muidu saab muuta)
+from tkinter.simpledialog import askstring
 
 
-#Põhiaknale frame loomine
-frame = tk.Frame(window, background='lightblue') #loome frame
-frame.pack(fill='both') #Paiguta põhiaknale (vabasse kohta) fill='both' teeb põhiakna ääre värviliseks. #Pack teeb nähtavaks Sobib ka tk.BOTH
+class PasswordGenerator:
+    def __init__(self, window):
+        #self.generate_password()
+        window.title("Parooligeneraator")
+        window_width = 300
+        window_height = 300
+        screen_width = window.winfo_screenwidth()
+        screen_height = window.winfo_screenheight()
+        x = (screen_width - window_width) // 2
+        y = (screen_height - window_height) // 2
+        window.geometry(f'{window_width}x{window_height}+{x}+{y}')
 
-#Ülesanne frame2 panemine
-frame2 =tk.Frame(window, background='yellow')
-frame2.pack(fill=tk.BOTH) #Kasuta expand=True koos .place()
 
-# Label nimi
-tk.Label(frame, text='Nimi', background='lightblue').pack(side=tk.LEFT, padx=3, pady=3) #Label luuakse, pannakse ja sinna jääb #padx ja pady kui palju ruumi jätta
+        #Loome framed
+        self.frame = tk.Frame(window, background='lightblue')
+        self.frame.pack(fill=tk.BOTH)
 
-#Sisestuskast (Entry)
-txt_name = tk.Entry(frame) #Loome sisestuskasti
-txt_name.focus() #Sisestuskast aktiivseks ehk kursor on seal kohe plinkimas
-txt_name.pack(side=tk.LEFT, padx=3, pady=3) #Teeme nähtavaks
+        self.frame2 = tk.Frame(window, background='lightyellow')
+        self.frame2.pack(fill=tk.BOTH)
 
-#Nupp (Button)
-btn_submit = tk.Button(frame, text='Näita', command=lambda: welcome()) #command rida juurde lisada, et ta kutsuks välja selle welcom def-i
-btn_submit.pack(side=tk.LEFT, padx=3, pady=3)
+        #Loo vidinad (Widgets)
+        self.lbl_previous = self.all_widgets()
 
-# Hiire koordinaadid (Label)
-lbl_mouse = tk.Label(frame, text='x = 0, y = 0', background='lightblue')
-lbl_mouse.pack(side=tk.LEFT, padx=3, pady=3)
 
-# Eelnev tekst (Label)
-lbl_previous = tk.Label(frame2, text='POLE', background='yellow') #frame2 muutsin ülesande pärast
-#lbl_previous.pack(side=tk.LEFT, padx=3, pady=3)
-#lbl_previous.place(x=5, y=5) #Kui kasutad place siis peab panema frame2 juures expand=True. Lükkab kogu vaba akna seda frame täis
-lbl_previous.grid(row=0, column=0) #grid ilma expandita teeb ka ühe rea
 
-window.bind('<Motion>', mouse_motion) #Paneb hiireliikumise funktsiooni tööle
+    def all_widgets(self):
+        tk.Label(self.frame, text='Vali parooli tingimused:', background='lightblue').pack(side=tk.TOP, padx=3, pady=3)  # Label luuakse, pannakse ja sinna jääb #padx ja pady kui palju ruumi jätta
 
-window.bind('<Return>', welcome) #Paneb enter klahvi ka töötama lisaks buttonile
+        self.password_length = None
+        self.add_symbols_var = tk.BooleanVar()
+        self.add_numbers_var = tk.BooleanVar()
+        self.add_capital_letters_var = tk.BooleanVar()
 
-window.mainloop() #Se on koodi viimane rida
+
+        checkbox_symbols = tk.Checkbutton(self.frame, text="Sisaldab sümboleid", variable=self.add_symbols_var, background='lightblue')
+        checkbox_symbols.pack(anchor=tk.CENTER)
+
+        checkbox_numbers = tk.Checkbutton(self.frame, text="Sisaldab numbreid", variable=self.add_numbers_var, background='lightblue')
+        checkbox_numbers.pack(anchor=tk.CENTER)
+
+        checkbox_capital_letters = tk.Checkbutton(self.frame, text="Sisaldab suuri tähti", variable=self.add_capital_letters_var, background='lightblue')
+        checkbox_capital_letters.pack(anchor=tk.CENTER)
+
+        # Nupp (Button)
+        btn_submit = tk.Button(self.frame, text='Näita', command=self.generate_password)
+        btn_submit.pack(side=tk.BOTTOM, padx=3, pady=3)
+        btn_length = tk.Button(self.frame, text='Pikkus', command=self.ask_length)
+        btn_length.pack(side=tk.BOTTOM, padx=3, pady=3)
+
+        lbl_PASSWORD = tk.Label(self.frame2, text='PAROOL: ', background='lightyellow')
+        lbl_PASSWORD.grid(row=0, column=0)
+        self.lbl_password2 = tk.Label(self.frame2, text='', background='lightyellow')
+        self.lbl_password2.grid(row=0, column=1)
+
+        return lbl_PASSWORD, self.lbl_password2
+
+    def ask_length(self):
+        password_length = askstring('Parooli pikkus.', 'Mis on parooli pikkus?(1-100)')
+        #print(password_length)
+        if password_length is None:
+            return
+        try:
+            self.password_length = int(password_length)
+            if not 1 <= self.password_length <= 100:
+                raise ValueError('Parooli pikkus on vale, sisesta pikkus vahemikus 1-100')
+        except ValueError as e:
+            messagebox.showerror('Viga', f'{e}')
+
+    def get_character_pool(self):
+        characters = string.ascii_lowercase #Väiketähed vaikimisi
+        if self.add_symbols_var.get():
+            characters += string.punctuation
+        if self.add_numbers_var.get():
+            characters += string.digits
+        if self.add_capital_letters_var.get():
+            characters += string.ascii_uppercase
+
+        if not characters:
+            messagebox.showerror('Viga!', 'Vali tingimused')
+            return None
+        #print(characters)
+        return characters
+
+
+    def generate_password(self):
+        if self.password_length is None:
+            self.password_length = 12
+
+        characters = self.get_character_pool()
+
+        password = ''.join(random.choice(characters) for _ in range(self.password_length))
+        self.lbl_password2['text'] = password
+        #print(password)
+        return password
+
+
